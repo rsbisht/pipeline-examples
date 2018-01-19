@@ -1,94 +1,101 @@
 #!groovy
 
-/*
-The MIT License
-
-Copyright (c) 2015-, CloudBees, Inc., and a number of other of contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
-node('node') {
-
+node('Server_Group_1') {
 
     currentBuild.result = "SUCCESS"
 
     try {
 
-       stage('Checkout'){
+            stage('Checkout'){
 
-          checkout scm
+            env.NODE_ENV = "Checkout"
+
+            print "[Stage] : ${env.NODE_ENV}"
+
+            sh "echo                                                       > ${env.JOB_NAME}.log"
+            sh "echo [ Stage: ${env.NODE_ENV} ] :: Node: ${env.NODE_NAME} >> ${env.JOB_NAME}.log" 
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+
+	    checkout scm
+
        }
 
        stage('Test'){
 
-         env.NODE_ENV = "test"
+            env.NODE_ENV = "Test"
 
-         print "Environment will be : ${env.NODE_ENV}"
+            print "[Stage] : ${env.NODE_ENV}"
 
-         sh 'node -v'
-         sh 'npm prune'
-         sh 'npm install'
-         sh 'npm test'
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+            sh "echo [ Stage: ${env.NODE_ENV} ] :: Node: ${env.NODE_NAME} >> ${env.JOB_NAME}.log" 
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+
+	    sh "ls -lrt ${WORKSPACE}                                      >> ${env.JOB_NAME}.log"
 
        }
 
-       stage('Build Docker'){
+       stage('Build'){
 
-            sh './dockerBuild.sh'
+            env.NODE_ENV = "Build"
+
+            print "[Stage] : ${env.NODE_ENV}"
+
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+            sh "echo [ Stage: ${env.NODE_ENV} ] :: Node: ${env.NODE_NAME} >> ${env.JOB_NAME}.log" 
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+
+	    sh "echo Building the code..                                  >> ${env.JOB_NAME}.log"
+
+            // sh 'export MAVEN_HOME=/opt/maven; cd ${WORKSPACE}; ${MAVEN_HOME}/bin/mvn clean install'
+
+	    sh "javac SimpleForLoop.java"
+	    sh "java SimpleForLoop                                        >> ${env.JOB_NAME}.log"
+
        }
 
        stage('Deploy'){
 
-         echo 'Push to Repo'
-         sh './dockerPushToRepo.sh'
+            env.NODE_ENV = "Deploy"
 
-         echo 'ssh to web server and tell it to pull new image'
-         sh 'ssh deploy@xxxxx.xxxxx.com running/xxxxxxx/dockerRun.sh'
+            print "[Stage] : ${env.NODE_ENV}"
+
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+            sh "echo [ Stage: ${env.NODE_ENV} ] :: Node: ${env.NODE_NAME} >> ${env.JOB_NAME}.log" 
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+	    sh "Copy the Jenkinsfile to Deployment server....             >> ${env.JOB_NAME}.log"
+
+	    sh 'rsync ${env.WORKARERA}/Jenkinsfile root@15.213.52.106:/tmp'
 
        }
 
        stage('Cleanup'){
 
-         echo 'prune and cleanup'
-         sh 'npm prune'
-         sh 'rm node_modules -rf'
+            env.NODE_ENV = "Deploy"
 
-         mail body: 'project build successful',
-                     from: 'xxxx@yyyyy.com',
-                     replyTo: 'xxxx@yyyy.com',
-                     subject: 'project build successful',
-                     to: 'yyyyy@yyyy.com'
+            print "[Stage] : ${env.NODE_ENV}"
+
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+            sh "echo [ Stage: ${env.NODE_ENV} ] :: Node: ${env.NODE_NAME} >> ${env.JOB_NAME}.log" 
+	    sh "echo                                                      >> ${env.JOB_NAME}.log"
+	    sh "Cleaning up the files....                                 >> ${env.JOB_NAME}.log"
+
+	    mail    from: 'rsbisht@hpe.com',
+                 replyTo: 'rsbisht@hpe.com',
+                      to: 'rsbisht@hpe.com',
+                 subject: 'Project Build Successful',
+	            body: 'Project Build Successful' 
        }
-
-
 
     }
     catch (err) {
 
         currentBuild.result = "FAILURE"
 
-            mail body: "project build error is here: ${env.BUILD_URL}" ,
-            from: 'xxxx@yyyy.com',
-            replyTo: 'yyyy@yyyy.com',
-            subject: 'project build failed',
-            to: 'zzzz@yyyyy.com'
+            mail    from: 'rsbisht@hpe.com',
+                 replyTo: 'rsbisht@hpe.com',
+                      to: 'rsbisht@hpe.com',
+                 subject: 'Project Build Failed !',
+	            body: "Project Build Failed ! You can find the error is here: ${env.BUILD_URL}" 
 
         throw err
     }
